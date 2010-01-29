@@ -1,6 +1,8 @@
 require 'eventmachine'
+require 'fileutils'
 
 module FliteSpeak
+  # none  /tmp  tmpfs  nodev,nosuid,noexec,nodiratime,size=256M  0 0
   TMP_PATH = '/tmp/flite_fifo'
 
   def file_modified
@@ -15,41 +17,51 @@ module FliteSpeak
     puts 'fifo unbind'; EM.stop
   end
 
-
   module SpeakDev
-    def post_init
-      @flushed = false
-    end
-
-    def flush_input_file
-      File.open(TMP_PATH, 'w'){ |f| f.print '' }
-      @flushed = true
-    end
+    F_FILE_BIN = "/usr/bin/flite -o play -f %s -ps "
+    F_STR_BIN  = "/usr/bin/flite -o play -t \"%s\" -ps"
+    LOG_TEMPLATE = "\n--> Process Event: %s  %i\nflite input: %s\n"
 
     def receive_data data
-      flush_input_file unless @flushed
       puts "flite spoke: #{data}"
     end
 
     def unbind
-      puts "flite exit: #{get_status.exitstatus}"
+      #puts "flite exit: #{get_status.exitstatus}"
     end
 
-    # read text form input file should be saver than passing ' -t ..' via shell
-    def self.read_file(filepath)
-      EM.popen("/usr/bin/flite -o play -f %s -ps " % [filepath], self)
+    def self.flush_input_file(path)
+      File.open(path, 'w'){ |f| f.print '' }
     end
-    #def self.say(str)
-    #  EM.popen("/usr/bin/flite -o play -t \"%s\" -ps" % [str], self)
-    #end
+
+    def self.log_input(path)
+      print LOG_TEMPLATE % [path, Time.now.to_i, File.read(path).inspect]
+    end
+
+    def self.read_file(filepath, flush=true)
+      if flush
+        path = filepath + '.pb'
+        FileUtils.cp filepath, path
+        flush_input_file(filepath)
+      else
+        path = filepath
+      end
+
+      log_input(path)
+      #p(F_FILE_BIN % [path])
+      EM.popen(F_FILE_BIN % [path], self)
+    end
+
+    def self.from_string(str)
+      EM.popen(F_STR_BIN % [path], self)
+    end
   end
 end
 
 EM.run do
   #EM.start_unix_domain_server '/tmp/flite-speak', FliteQueueListen
-  #EM.popen("ruby -e' $stdout.sync = true; gets.to_i.times{ |i| puts i+1; sleep 1 } '", RubyCounter)
 
-  fifo = EM.watch_file(FliteSpeak::TMP_PATH, FliteSpeak)
+  flite_watch = EM.watch_file(FliteSpeak::TMP_PATH, FliteSpeak)
 end
 
 
@@ -71,20 +83,6 @@ module FliteQueueListen
     puts "-- someone disconnected from the echo server!"
   end
 end
-
-module RubyCounter
- def post_init
-   # count up to 5
-   send_data "5\n"
- end
- def receive_data data
-   puts "ruby sent me: #{data}"
- end
- def unbind
-   puts "ruby died with exit status: #{get_status.exitstatus}"
- end
-end
-
 
 
 module FifoFile
