@@ -4,7 +4,7 @@ require 'fileutils'
 module FliteSpeak
   # none  /tmp  tmpfs  nodev,nosuid,noexec,nodiratime,size=256M  0 0
   TMP_PATH = '/tmp/flite_fifo'
-  F_FILE_BIN = "/usr/bin/flite -o play -f %s -ps "
+  F_FILE_BIN = "/usr/bin/flite -o play -f %s -ps --setf duration_stretch=1.2 --setf int_f0_target_mean=90"
   F_STR_BIN  = "/usr/bin/flite -o play -t \"%s\" -ps "
   MsgQueue = EM::Queue.new
 
@@ -70,10 +70,37 @@ module FliteSpeak
   #def self.from_string(str)
   #  EM.popen(F_STR_BIN % [path], self)
   #end
+  def self.create(file=TMP_PATH)
+    # touch unless exists
+    File.open(file, 'w'){ |f| f.print '' } unless File.exists?(file)
+    # create watcher
+    EM.watch_file(file, self)
+  end
 end
 
+if $0 == __FILE__
+  if ARGV.include? '--daemon'
+    fork do
+      #if user = ARGV.select{|i| i.match(/^--user=/) }.first
+      #  require 'etc';  Process.uid = Etc.getpwnam(user.split('=').last).uid
+      #end
+      trap(:HUP){ 'terminal disconnected' }
+      rd, @wr = IO.pipe
+      $oldstdout=$stdout.dup;$stdout.reopen(@wr)
 
-EM.run do
-  flite_fifo = EM.watch_file(FliteSpeak::TMP_PATH, FliteSpeak)
+      EM.run do
+        flite_fifo = FliteSpeak.create
+        EM::PeriodicTimer.new(10) { @wr.flush }
+      end
+
+      $stdout.reopen($oldstdout)
+      puts "DAEMON: file: %s pid:%i   exit 0" % [__FILE__, Process.pid]
+    end
+  else
+
+    EM.run do
+      flite_fifo = FliteSpeak.create
+    end
+  end
 end
 
