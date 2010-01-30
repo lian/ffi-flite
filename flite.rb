@@ -41,6 +41,8 @@ module FliteSpeak
         # write flite input file
         File.open(path, 'w'){|f| f.print v }
         # exec flite
+        #cmd = "/usr/bin/flite -o play -ps --setf duration_stretch=1.2 --setf int_f0_target_mean=90"
+        #EM.popen(cmd, SpeakDev)
         EM.popen(F_FILE_BIN % [path], SpeakDev)
         #EM::Timer.new(0.5){process_queue(path, c+1)} unless MsgQueue.empty?
       end
@@ -55,6 +57,7 @@ module FliteSpeak
     end
     def post_init
       State[:lock] = true
+      #send_data "test stdin\n\n\r\n"
     end
     def unbind
       State[:lock] = false
