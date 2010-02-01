@@ -32,6 +32,8 @@ module FFI::Flite
   end
 end
 
+
+__END__
 FFI::Flite.init
 voice = FFI::Flite::Voice.init_kal16
 
