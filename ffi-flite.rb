@@ -13,6 +13,11 @@ module FFI::Flite
 
   attach_function :init, :flite_init, [], :int
   attach_function :text_to_speech, :flite_text_to_speech, [:string, :pointer, :string], :float
+  attach_function :synth_text, :flite_synth_text, [:string, :pointer], :pointer
+  attach_function :utt_wave, [:pointer], :pointer
+  attach_function :play_wave, [:pointer], :int
+  attach_function :delete_utterance, [:pointer], :int
+  attach_function :save_wave_riff, :cst_wave_save_riff, [:pointer, :string], :int
 
   ffi_lib 'libflite_usenglish.so', 'libflite_cmulex.so'
 
@@ -27,6 +32,20 @@ module FFI::Flite
   end
 end
 
+FFI::Flite.init
+voice = FFI::Flite::Voice.init_kal16
+
+u = FFI::Flite.synth_text 'test utterance', voice
+w = FFI::Flite.utt_wave(u)
+# durs = (float)w->num_samples / (float)w-sample_rate
+
+FFI::Flite.play_wave(w)
+FFI::Flite.save_wave_riff(w, 'test_utterance.riff')
+
+FFI::Flite.delete_utterance(u)
+
+
+__END__
 EM.run do
   FFI::Flite.init
   voice = FFI::Flite::Voice.init_kal16
