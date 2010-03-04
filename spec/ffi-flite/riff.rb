@@ -1,7 +1,9 @@
 require 'bacon'; Bacon.summary_on_exit
 
 def generate_test_riff(filename)
-  require 'ffi-flite'
+  #require 'ffi-flite'
+  require_relative '../../ffi-flite'
+
   FFI::Flite.init.should == 0
   voice = FFI::Flite::Voice.init_kal16
   voice.should.not.be.null?
