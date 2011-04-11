@@ -1,0 +1,19 @@
+ffi-flite
+---------
+
+text to speach
+==============
+
+    require 'ffi-flite'
+
+    FFI::Flite.init
+    voice = FFI::Flite::Voice.init_kal16
+    FFI::Flite.text_to_speech `uptime`, voice, 'play'
+
+
+flite dependency
+================
+
+    git clone git://github.com/optionalgod/flite.git; cd flite
+    ./configure --enable-shared --prefix=/usr/local
+    make

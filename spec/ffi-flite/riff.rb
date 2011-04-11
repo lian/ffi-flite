@@ -1,8 +1,7 @@
 require 'bacon'; Bacon.summary_on_exit
 
 def generate_test_riff(filename)
-  #require 'ffi-flite'
-  require_relative '../../ffi-flite'
+  require_relative '../../lib/ffi-flite'
 
   FFI::Flite.init.should == 0
   voice = FFI::Flite::Voice.init_kal16
@@ -19,10 +18,12 @@ end
 
 
 describe 'RIFF Wave Format' do
-  @filename = 'test_utterance.riff'
+  require 'tempfile'
+  @file = Tempfile.new('test_utterance')
+  @filename = @file.path
 
   it 'generate riff if missing' do
-    !File.exists?(@filename) ? generate_test_riff(@filename) : true.should == true
+    generate_test_riff(@file.path)
   end
 
   it 'loads test riff' do
@@ -94,4 +95,6 @@ describe 'RIFF Wave Format' do
     # check end of file equals end of suggested data length
     @riff.reverse[0...4].should == @riff[44...44+ (@riff.size-44) ].reverse[0...4]
   end
+
+  @file.delete
 end

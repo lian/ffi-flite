@@ -4,7 +4,7 @@ FFI::Flite.init
 voice = FFI::Flite::Voice.init_kal16
 
 
-text = 'current running ruby release is - ' + RUBY_VERSION
+text = 'ruby version - ' + RUBY_VERSION
 
 
 u = FFI::Flite.synth_text text, voice
