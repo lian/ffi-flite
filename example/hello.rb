@@ -7,7 +7,7 @@ voice = FFI::Flite::Voice.init_kal16
 text = 'ruby version - ' + RUBY_VERSION
 
 
-u = FFI::Flite.synth_text text, voice
+u = FFI::Flite.synth_text(text, voice)
 w = FFI::Flite.utt_wave(u)
     FFI::Flite.play_wave(w)
     #FFI::Flite.save_wave_riff(w, filename)
